@@ -1,0 +1,109 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-schema
+  namespace: xpense
+data:
+  schema.sql: |
+    CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+    CREATE TABLE IF NOT EXISTS users (
+      id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      platform         VARCHAR(20) NOT NULL CHECK (platform IN ('whatsapp','telegram')),
+      platform_user_id VARCHAR(100) NOT NULL,
+      phone            VARCHAR(20),
+      name             VARCHAR(100),
+      plan             VARCHAR(10) NOT NULL DEFAULT 'free' CHECK (plan IN ('free','pro')),
+      plan_expires_at  TIMESTAMPTZ,
+      created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE(platform, platform_user_id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_users_platform_id ON users(platform, platform_user_id);
+
+    CREATE TABLE IF NOT EXISTS expenses (
+      id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id     UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      amount      NUMERIC(10,2) NOT NULL CHECK (amount > 0 AND amount <= 100000),
+      category    VARCHAR(20) NOT NULL CHECK (category IN
+                  ('food','transport','shopping','entertainment','health','other')),
+      description TEXT,
+      note        TEXT,
+      receipt_url TEXT,
+      message_id  VARCHAR(100),
+      platform    VARCHAR(20),
+      created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+    CREATE INDEX IF NOT EXISTS idx_expenses_user_created  ON expenses(user_id, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_expenses_user_category ON expenses(user_id, category);
+
+    CREATE TABLE IF NOT EXISTS conversation_state (
+      user_id            UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+      state              VARCHAR(30) NOT NULL DEFAULT 'idle',
+      pending_category   VARCHAR(20),
+      pending_expense_id UUID REFERENCES expenses(id),
+      context            JSONB,
+      updated_at         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      expires_at         TIMESTAMPTZ NOT NULL DEFAULT NOW() + INTERVAL '10 minutes'
+    );
+
+    CREATE TABLE IF NOT EXISTS sessions (
+      id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id     UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      token_hash  VARCHAR(64) NOT NULL UNIQUE,
+      created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      expires_at  TIMESTAMPTZ NOT NULL DEFAULT NOW() + INTERVAL '7 days'
+    );
+    CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token_hash);
+
+    CREATE TABLE IF NOT EXISTS budgets (
+      id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id       UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      category      VARCHAR(20) NOT NULL,
+      monthly_limit NUMERIC(10,2) NOT NULL CHECK (monthly_limit > 0),
+      created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE(user_id, category)
+    );
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-init
+  namespace: xpense
+spec:
+  backoffLimit: 5
+  template:
+    spec:
+      restartPolicy: OnFailure
+      initContainers:
+        - name: wait-for-postgres
+          image: postgres:15
+          command:
+            - sh
+            - -c
+            - |
+              until pg_isready -h postgres -U xpense -d xpense; do
+                echo "Waiting for postgres..."; sleep 3
+              done
+          env:
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: xpense-secrets
+                  key: POSTGRES_PASSWORD
+      containers:
+        - name: db-init
+          image: postgres:15
+          command: ["psql", "-h", "postgres", "-U", "xpense", "-d", "xpense", "-f", "/schema/schema.sql"]
+          env:
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: xpense-secrets
+                  key: POSTGRES_PASSWORD
+          volumeMounts:
+            - name: schema
+              mountPath: /schema
+      volumes:
+        - name: schema
+          configMap:
+            name: postgres-schema

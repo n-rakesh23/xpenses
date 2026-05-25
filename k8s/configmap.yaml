@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: xpense-config
+  namespace: xpense
+data:
+  NODE_ENV: "production"
+  PORT: "3000"
+  JWT_MAGIC_LINK_EXPIRY: "15m"
+  JWT_SESSION_EXPIRY: "7d"
+  APP_URL: "https://xpense.yourdomain.com"
+  API_URL: "https://api.xpense.yourdomain.com"

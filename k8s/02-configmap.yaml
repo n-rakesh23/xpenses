@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: xpense-config
+  namespace: xpense
+data:
+  NODE_ENV: "production"
+  PORT: "3000"
+  # Replace with your actual domain — used for CORS and magic-link emails
+  APP_URL: "https://yourdomain.com"
+  API_URL: "https://yourdomain.com"

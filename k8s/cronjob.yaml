@@ -1,0 +1,22 @@
+# Weekly summary — every Sunday 08:00 IST (02:30 UTC)
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: xpense-weekly-summary
+  namespace: xpense
+spec:
+  schedule: "30 2 * * 0"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: weekly-summary
+              image: YOUR_AWS_ACCOUNT_ID.dkr.ecr.ap-south-1.amazonaws.com/xpense-backend:latest
+              command: ["node", "src/jobs/weeklySummary.js"]
+              envFrom:
+                - configMapRef:
+                    name: xpense-config
+                - secretRef:
+                    name: xpense-secrets
+          restartPolicy: OnFailure
