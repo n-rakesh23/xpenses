@@ -7,5 +7,5 @@ data:
   NODE_ENV: "production"
   PORT: "3000"
   # Replace with your actual domain — used for CORS and magic-link emails
-  APP_URL: "http://ad1b148b00bac435aaff19d8d7d8e4d9-d2476975cf3c9684.elb.ap-south-1.amazonaws.com"
-  API_URL: "http://ad1b148b00bac435aaff19d8d7d8e4d9-d2476975cf3c9684.elb.ap-south-1.amazonaws.com"
+  APP_URL: "https://3-111-109-127.sslip.io"
+  API_URL: "https://3-111-109-127.sslip.io"

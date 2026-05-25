@@ -3,11 +3,17 @@ kind: Ingress
 metadata:
   name: xpense-ingress
   namespace: xpense
-  annotations: {}
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
 spec:
   ingressClassName: nginx
+  tls:
+    - hosts:
+        - 3-111-109-127.sslip.io
+      secretName: xpense-tls
   rules:
-    - http:
+    - host: 3-111-109-127.sslip.io
+      http:
         paths:
           # Backend: all /api/* and /webhook/* traffic
           - path: /api
