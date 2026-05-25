@@ -41,7 +41,6 @@ spec:
                 secretKeyRef:
                   name: xpense-secrets
                   key: POSTGRES_PASSWORD
-          env:
             - name: PGDATA
               value: /var/lib/postgresql/data/pgdata
           volumeMounts:
