@@ -61,7 +61,7 @@ router.post(
 
       const verifyUrl = `${process.env.API_URL}/api/auth/verify/${token}`;
 
-      logger.info('Magic link generated', { userId: user.id });
+      logger.info('Magic link generated', { userId: user.id, verify_url: verifyUrl });
 
       // In production you'd send this via email/SMS; for now return it
       res.json({
