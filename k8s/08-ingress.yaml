@@ -3,18 +3,11 @@ kind: Ingress
 metadata:
   name: xpense-ingress
   namespace: xpense
-  annotations:
-    # Remove the cert-manager annotation if you are not using cert-manager for TLS
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  annotations: {}
 spec:
   ingressClassName: nginx
-  tls:
-    - hosts:
-        - yourdomain.com         # Replace with your actual domain
-      secretName: xpense-tls
   rules:
-    - host: yourdomain.com       # Replace with your actual domain
-      http:
+    - http:
         paths:
           # Backend: all /api/* and /webhook/* traffic
           - path: /api
