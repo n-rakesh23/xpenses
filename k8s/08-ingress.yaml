@@ -9,10 +9,10 @@ spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - 3-111-109-127.sslip.io
+        - xpense-rakesh.duckdns.org
       secretName: xpense-tls
   rules:
-    - host: 3-111-109-127.sslip.io
+    - host: xpense-rakesh.duckdns.org
       http:
         paths:
           # Backend: all /api/* and /webhook/* traffic

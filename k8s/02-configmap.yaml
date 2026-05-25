@@ -7,5 +7,5 @@ data:
   NODE_ENV: "production"
   PORT: "3000"
   # Replace with your actual domain — used for CORS and magic-link emails
-  APP_URL: "https://3-111-109-127.sslip.io"
-  API_URL: "https://3-111-109-127.sslip.io"
+  APP_URL: "https://xpense-rakesh.duckdns.org"
+  API_URL: "https://xpense-rakesh.duckdns.org"
