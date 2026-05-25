@@ -11,6 +11,7 @@ const {
   getSessionByTokenHash,
 } = require('../db/queries');
 const { randomToken, sha256 } = require('../utils/crypto');
+const { sendTelegram } = require('../services/reply');
 const logger = require('../utils/logger');
 
 const router = express.Router();
@@ -63,9 +64,20 @@ router.post(
 
       logger.info('Magic link generated', { userId: user.id, verify_url: verifyUrl });
 
-      // In production you'd send this via email/SMS; for now return it
+      // Send via Telegram if the user registered through the bot
+      if (user.platform === 'telegram' && !user.platform_user_id.startsWith('phone:')) {
+        try {
+          await sendTelegram(
+            user.platform_user_id,
+            `👋 Hi! Here is your Xpense login link:\n\n${verifyUrl}\n\n⏳ Expires in 15 minutes.`
+          );
+        } catch (err) {
+          logger.error('Failed to send magic link via Telegram', { userId: user.id, error: err.message });
+        }
+      }
+
       res.json({
-        message: 'Magic link generated. Check your phone/email.',
+        message: 'Magic link sent to your Telegram. Click it to log in.',
         ...(process.env.NODE_ENV !== 'production' && { verify_url: verifyUrl, token }),
       });
     } catch (err) {
